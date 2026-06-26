@@ -6,31 +6,48 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.beans.factory.annotation.Value;
+import java.util.Collections;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.oceandive.backend.auth.JwtAuthFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
+    private final JwtAuthFilter jwtAuthFilter;
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+    this.jwtAuthFilter = jwtAuthFilter;
+}
+    @Bean
+    public GoogleIdTokenVerifier googleIdTokenVerifier() {
+        return new GoogleIdTokenVerifier.Builder(
+            new NetHttpTransport(), 
+            new GsonFactory())
+            .setAudience(Collections.singletonList(googleClientId))
+            .build();
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
-            // 1. Es una API REST: se deshabilita CSRF por completo
             .csrf(csrf -> csrf.disable())
-            
-            // 2. Definición de accesos a los endpoints
+
             .authorizeHttpRequests(auth -> auth
-                // Opción A: Permitir libre acceso a TODO (Ideal para pruebas locales rápidas)
-                .anyRequest().permitAll()
-                
-                // Opción B: Solo proteger el resto y solo abrir rutas de test, descomenta abajo:
-                // .requestMatchers("/api/v1/publico/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
-                // .anyRequest().authenticated()
+                .requestMatchers("/api/v1/auth/**").permitAll()
+                .anyRequest().authenticated()
             )
-            
-            // 3. API REST Stateless: Obliga a Spring a no crear sesiones web en el servidor
+
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS
-            ));
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
