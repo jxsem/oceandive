@@ -42,7 +42,7 @@ public class User {
     // Plan
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PlanType plan;
+    private PlanType planType;
 
     @Enumerated(EnumType.STRING)
     private PlanStatus planStatus;
@@ -66,5 +66,5 @@ public class User {
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    private LocalDateTime updateAt;
 }
