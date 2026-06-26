@@ -1,4 +1,4 @@
-package com.oceandive.backend.oceandata.gebco;
+package com.oceandive.backend.oceandata.copernicus;
 
 public class CopernicusService {
 
